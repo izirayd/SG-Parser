@@ -21,12 +21,6 @@
     <ClCompile Include="SGParser.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="typedef_test.cpp">
-      <Filter>detail</Filter>
-    </ClCompile>
-    <ClCompile Include="..\test.cpp">
-      <Filter>detail</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tree.hpp">
@@ -44,5 +38,14 @@
     <ClInclude Include="string_function.hpp">
       <Filter>detail</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\test.cpp">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="typedef_test.cpp">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="..\sg.hpp" />
   </ItemGroup>
 </Project>
