@@ -97,7 +97,7 @@ public:
 
 	type_t() {}
 	type_t(const std::string& n) { name = n; }
-	type_t(const std::string& n, int32_t s) {
+	type_t(const std::string& n, int32_t s)  {
 		full_name = n;
 		name = n;
 		size_type = s;
@@ -310,6 +310,22 @@ public:
 	}
 };
 
+
+class template_t
+{
+    public:
+		std::string name;
+	
+		int         level = 1;
+
+		template_t*   parent      = nullptr;
+
+		tree_words_t* open_block  = nullptr;
+		tree_words_t* close_block = nullptr;
+
+		bool is_global() { return level == 1; }
+};
+
 class cpp_element_t
 {
  public:
@@ -317,9 +333,11 @@ class cpp_element_t
 	   Любой элемент изначально глобален
 	   Его требуется принудительно перемещать на другой уровень
 	*/
-    namespace_t   *namespace_value;
+    namespace_t*  namespace_value = nullptr;
+	template_t*   template_value  = nullptr;
+	class_t*      class_value     = nullptr;
 
-	class_t*      class_value = nullptr;
+
 	words_base_t* element     = nullptr; // Нельзя уничтожать
 
 	int           level       = -1;
@@ -338,11 +356,17 @@ class cpp_element_t
 			delete namespace_value;
 			namespace_value = nullptr;
 		}
+
+		if (template_value) {
+			delete template_value;
+			template_value = nullptr;
+		}
 	}
 
 	// TODO: flags
-	bool is_class()     { return class_value != nullptr; }
+	bool is_class()     { return class_value     != nullptr; }
 	bool is_namespace() { return namespace_value != nullptr; }
+	bool is_template()  { return template_value  != nullptr; }
 };
 
 typedef tree_t<cpp_element_t*> tree_element_t;
@@ -399,6 +423,19 @@ public:
 		}
 	}
 
+	void print_element(tree_words_t* tree)
+	{
+		if (tree->get_value()->is_new_line()
+			||
+			tree->get_value()->is_space_tab() ||
+			tree->get_value()->is_symbol()
+			)
+			return;
+
+		print_space(tree->level + 1);
+		printf("%s\n", tree->get_value()->data.c_str());
+	}
+
 	void process_print(tree_element_t *element)
 	{
 		print_space(element->level);
@@ -411,6 +448,14 @@ public:
 		if (element->get_value()->is_namespace())
 		{
 			printf("type: namespace name: %s\n", element->get_value()->namespace_value->name.c_str());
+		}
+
+		if (element->get_value()->is_template())
+		{
+			printf("type: template:\n");
+
+			element->get_value()->open_block->func = std::bind(&cpp_elements_t::print_element, this, std::placeholders::_1);
+			element->get_value()->open_block->process();
 		}
 	}
 
@@ -509,7 +554,8 @@ enum cpp_flag_t : std::flag32_t
 	cpp_ignore_next_iteration2 = 1 << 11,
 	cpp_typedef = 1 << 12,
 	cpp_block_read = 1 << 13,
-	cpp_template = 1 << 14
+	cpp_template = 1 << 14,
+	cpp_template_block_read = 1 << 15,
 };
 
 struct base_arg_t;
@@ -579,6 +625,17 @@ struct base_arg_t
 	tree_words_t* word;
 
 	parser::event_process_t* event_process;
+
+	bool is_global() {
+
+		bool result = false;
+
+		if (word)
+			if (word->parent)
+				result = word->parent->parent->is_root;
+
+		return result;
+	}
 };
 
 class parser_cpp_t
@@ -910,7 +967,7 @@ public:
 
 				for (size_t i = 0; i < arg->event_process->list_events.size(); i++)
 				{
-					if (std::check_flag(arg->region->cpp_event, arg->event_process->list_events[i].element.cpp_flag) && std::check_flag(arg->region->cpp_flag, cpp_flag_t::value))
+					if (std::check_flag(arg->region->cpp_event, arg->event_process->list_events[i].element.cpp_flag)  && std::check_flag(arg->region->cpp_flag, cpp_flag_t::value))
 					{
 						// здесь вызов callback
 						if (arg->event_process->list_events[i].func)
@@ -925,6 +982,7 @@ public:
 			for (size_t i = 0; i < arg->event_process->list_events.size(); i++)
 			{
 				if (arg->element->data == arg->event_process->list_events[i].element.name && std::check_flag(arg->region->cpp_event, arg->event_process->list_events[i].element.cpp_flag)) {
+
 					if (arg->event_process->list_events[i].func)
 						arg->event_process->list_events[i].func(arg);
 				}
@@ -1205,21 +1263,45 @@ public:
 
 	parser::event_process_t event_process;
 
-	void parse_namespace(base_arg_t*arg)
+	void parse_block(base_arg_t* arg)
 	{
-		bool is_global = false;
+		if (std::check_flag(arg->region->cpp_flag, cpp_flag_t::cpp_block_read)) {
 
-		if (arg->word)
-		{
-			if (arg->word->parent)
+			if (arg->element->data == "{")
+				if (arg->region->cpp_element)
+				{
+					if (arg->region->cpp_element->element)
+						arg->region->cpp_element->element->start_index = arg->element->start_index;
+
+					arg->region->cpp_element->open_block = arg->word;
+				}
+
+			if (arg->element->data == "}")
 			{
-				is_global = arg->word->parent->parent->is_root;
+				if (arg->region->cpp_element)
+					if (arg->region->cpp_element->element)
+						arg->region->cpp_element->element->end_index = arg->element->end_index;
+				
+				if (
+					std::check_flag(arg->region->cpp_flag, cpp_flag_t::cpp_namespace)
+					  ||
+					std::check_flag(arg->region->cpp_flag, cpp_flag_t::cpp_class)
+				   )
+				{
+					arg->region->cpp_element->close_block = arg->word;
+
+					cpp_context.add_element(arg->region->cpp_element);
+					std::clear_flag(arg->region->cpp_flag);
+				}
 			}
 		}
+	}
 
+	void parse_namespace_keywrod(base_arg_t* arg) {
+				
 		if (!std::check_flag(arg->region->cpp_flag, cpp_flag_t::cpp_block_read)) {
 
-			cpp_element_t* cpp_element   = new cpp_element_t;
+			cpp_element_t* cpp_element = new cpp_element_t;
 
 			if (std::check_flag(arg->region->cpp_flag, cpp_flag_t::cpp_namespace)) {
 				
@@ -1248,39 +1330,56 @@ public:
 			std::del_flag(arg->region->cpp_flag, cpp_flag_t::value);
 			std::add_flag(arg->region->cpp_flag, cpp_flag_t::cpp_block_read);
 		}
-		else
+	}
+
+	// empty func, cuz no value
+	void parse_template_keywrod(base_arg_t* arg)
+	{
+	}
+
+	void parse_template_block(base_arg_t* arg)
+	{
+		if (std::check_flag(arg->region->cpp_flag, cpp_flag_t::cpp_template))
 		{
-			if (arg->element->data == "{")
-			if (arg->region->cpp_element)
-			{
-				if (arg->region->cpp_element->element)
-					arg->region->cpp_element->element->start_index = arg->element->start_index;
+			printf("Template: %s\n", arg->element->data.c_str());
 
-				arg->region->cpp_element->open_block = arg->word;
-			} 
-
-			if (arg->element->data == "}")
+			if (arg->element->data == "<")
 			{
+				cpp_element_t* cpp_element  = new cpp_element_t;
+				
+				cpp_element->template_value = new template_t;
+
+				cpp_element->template_value->name  = "just template";
+				cpp_element->template_value->level = arg->word->level;
+
+				cpp_element->element = arg->element;
+				cpp_element->level   = arg->word->level;
+
+				arg->region->cpp_element = cpp_element;
+
+				last_cpp_element = cpp_element;
+				
 				if (arg->region->cpp_element)
 				{
 					if (arg->region->cpp_element->element)
-						arg->region->cpp_element->element->end_index = arg->element->end_index;
-				}
+						arg->region->cpp_element->element->start_index = arg->element->start_index;
 
-				if (
-					 std::check_flag(arg->region->cpp_flag, cpp_flag_t::cpp_namespace) 
-					 ||
-					 std::check_flag(arg->region->cpp_flag, cpp_flag_t::cpp_class)
-				   )
-				{
-					arg->region->cpp_element->close_block = arg->word;
-
-					cpp_context.add_element(arg->region->cpp_element);
-					std::clear_flag(arg->region->cpp_flag);
+					arg->region->cpp_element->open_block = arg->word;
 				}
 			}
 
-		}
+			if (arg->element->data == ">")
+			{
+				if (arg->region->cpp_element)
+					if (arg->region->cpp_element->element)
+						arg->region->cpp_element->element->end_index = arg->element->end_index;
+
+				arg->region->cpp_element->close_block = arg->word;
+
+				cpp_context.add_element(arg->region->cpp_element);
+				std::clear_flag(arg->region->cpp_flag);	
+			}
+		}		
 	}
 
 	template<typename type_flag_t>
@@ -1296,20 +1395,20 @@ public:
 
 	void init_event_process()
 	{
-		event_process.list_events.push_back({ "namespace", cpp_flag_t::cpp_namespace, std::bind(&parser_cpp_t::parse_namespace, this, std::placeholders::_1), false });
+		event_process.list_events.push_back({ "namespace", cpp_flag_t::cpp_namespace, std::bind(&parser_cpp_t::parse_namespace_keywrod, this, std::placeholders::_1), false });
 
-		event_process.list_events.push_back({ "{",  flag_sum(cpp_flag_t::cpp_namespace, cpp_flag_t::cpp_block_read), std::bind(&parser_cpp_t::parse_namespace, this, std::placeholders::_1), true });
-		event_process.list_events.push_back({ "}",  flag_sum(cpp_flag_t::cpp_namespace, cpp_flag_t::cpp_block_read), std::bind(&parser_cpp_t::parse_namespace, this, std::placeholders::_1), true });
+		event_process.list_events.push_back({ "{",  flag_sum(cpp_flag_t::cpp_namespace, cpp_flag_t::cpp_block_read), std::bind(&parser_cpp_t::parse_block, this, std::placeholders::_1), true });
+		event_process.list_events.push_back({ "}",  flag_sum(cpp_flag_t::cpp_namespace, cpp_flag_t::cpp_block_read), std::bind(&parser_cpp_t::parse_block, this, std::placeholders::_1), true });
 
-		event_process.list_events.push_back({ "class", cpp_flag_t::cpp_class, std::bind(&parser_cpp_t::parse_namespace, this, std::placeholders::_1), false });
+		event_process.list_events.push_back({ "class", cpp_flag_t::cpp_class, std::bind(&parser_cpp_t::parse_namespace_keywrod, this, std::placeholders::_1), false });
 
-		event_process.list_events.push_back({ "{",  flag_sum(cpp_flag_t::cpp_class, cpp_flag_t::cpp_block_read), std::bind(&parser_cpp_t::parse_namespace, this, std::placeholders::_1), true });
-		event_process.list_events.push_back({ "}",  flag_sum(cpp_flag_t::cpp_class, cpp_flag_t::cpp_block_read), std::bind(&parser_cpp_t::parse_namespace, this, std::placeholders::_1), true });
+		event_process.list_events.push_back({ "{",  flag_sum(cpp_flag_t::cpp_class, cpp_flag_t::cpp_block_read), std::bind(&parser_cpp_t::parse_block, this, std::placeholders::_1), true });
+		event_process.list_events.push_back({ "}",  flag_sum(cpp_flag_t::cpp_class, cpp_flag_t::cpp_block_read), std::bind(&parser_cpp_t::parse_block, this, std::placeholders::_1), true });
 
-		event_process.list_events.push_back({ "template", cpp_flag_t::cpp_class, std::bind(&parser_cpp_t::parse_namespace, this, std::placeholders::_1), false });
+		event_process.list_events.push_back({ "template",  cpp_flag_t::cpp_template, std::bind(&parser_cpp_t::parse_template_keywrod, this, std::placeholders::_1), false });
 
-		event_process.list_events.push_back({ "<",  flag_sum(cpp_flag_t::cpp_class, cpp_flag_t::cpp_block_read), std::bind(&parser_cpp_t::parse_namespace, this, std::placeholders::_1), true });
-		event_process.list_events.push_back({ ">",  flag_sum(cpp_flag_t::cpp_class, cpp_flag_t::cpp_block_read), std::bind(&parser_cpp_t::parse_namespace, this, std::placeholders::_1), true });
+		event_process.list_events.push_back({ "<",  flag_sum(cpp_flag_t::cpp_template, cpp_flag_t::cpp_template_block_read), std::bind(&parser_cpp_t::parse_template_block, this, std::placeholders::_1), true });
+		event_process.list_events.push_back({ ">",  flag_sum(cpp_flag_t::cpp_template, cpp_flag_t::cpp_template_block_read), std::bind(&parser_cpp_t::parse_template_block, this, std::placeholders::_1), true });
 	}
 
 	void parse_element(tree_words_t *word)
