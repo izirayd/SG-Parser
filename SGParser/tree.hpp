@@ -175,7 +175,7 @@ public:
 		std::clear(tree);
 	}
 
-	data_value_t get_value() const  { return value; }
+	data_value_t  get_value() const  { return value; }
 	data_value_t& get_value() { return value; }
 
 	void set_value(const data_value_t& new_value) {

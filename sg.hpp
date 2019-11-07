@@ -5,638 +5,10 @@
 #include "SGParser/path.hpp"
 #include "SGParser/file.hpp"
 
+#include "SGParser/cpp_elements.hpp"
+#include "SGParser/event_process.hpp"
+
 // надо распарсить это xtr1common
-
-const std::string keyword_symbols_cpp = "{}()[]<>;:,./|\"\"\\\n=-+*?~`\'#!@$%^&\t\r";
-
-bool it_keyword_symbol(const char symbol) {
-	for (const auto& keyword_symbol : keyword_symbols_cpp)
-		if (keyword_symbol == symbol)
-			return true;
-
-	return false;
-}
-bool it_keyword_symbol_or_space(const char symbol) { return it_keyword_symbol(symbol) || symbol == ' '; }
-bool it_word_symbol(const char symbol) { return !it_keyword_symbol_or_space(symbol); }
-bool it_space_or_tab(const char symbol) { return symbol == ' ' || symbol == '\t'; }
-bool it_space_or_tab_or_end(const char symbol) { return symbol == ' ' || symbol == '\n' || symbol == '\t' || symbol == '\r'; }
-bool it_new_line(const char symbol) { return symbol == '\n' || symbol == '\r'; }
-
-enum class parse_flag_t : std::flag16_t
-{
-	unknow = 1 << 0,
-	word = 1 << 1,
-	space_tab = 1 << 2,
-	symbol = 1 << 3,
-	group_symbol = 1 << 4,
-	new_line = 1 << 5
-};
-
-struct words_base_t
-{
-	words_base_t() { std::clear_flag(type); };
-	words_base_t(std::flag16_t t, const std::string& str) { type = t; data = str; }
-
-	std::flag16_t type;
-	std::string   data;
-
-	void clear() { std::clear_flag(type); data.clear(); }
-
-	bool is_space_tab()    { return std::check_flag(type, parse_flag_t::space_tab);    }
-	bool is_word()         { return std::check_flag(type, parse_flag_t::word);         }
-	bool is_group_symbol() { return std::check_flag(type, parse_flag_t::group_symbol); }
-	bool is_new_line()     { return std::check_flag(type, parse_flag_t::new_line);     }
-	bool is_symbol()       { return std::check_flag(type, parse_flag_t::symbol);       }
-
-	int start_index = -1;
-	int end_index   = -1;
-
-	int index_pair = -1;
-
-	tree_t<words_base_t *> *my_pair = nullptr;
-};
-
-typedef tree_t<words_base_t*> tree_words_t;
-
-class words_t
-{
-public:
-	std::vector<words_base_t> words;
-	void push(const words_base_t& data) { words.push_back(data); }
-	void clear() { words.clear(); }
-};
-
-enum property_type_flag : std::flag32_t
-{
-	type_base_type = 1 << 0,
-	type_pointer = 1 << 1,
-	type_link = 1 << 2,
-	type_const = 1 << 3,
-	type_class = 1 << 4,
-	type_namespace = 1 << 5,
-	type_new_type = 1 << 6,
-	type_void = 1 << 7,
-	type_callback = 1 << 8,
-	type_volatile = 1 << 9,
-	type_register = 1 << 10,
-	type_auto = 1 << 11,
-	type_static = 1 << 12,
-	type_extern = 1 << 13,
-	type_restrict = 1 << 14,
-	type_template = 1 << 15,
-	type_array = 1 << 16
-};
-
-class class_t;
-
-// ћожет €вл€тьс€ как собственным типом, так и классом так и шаблоном
-// “ак же может быть переопределенн от другого класса или типа
-class type_t
-{
-public:
-
-	type_t() {}
-	type_t(const std::string& n) { name = n; }
-	type_t(const std::string& n, int32_t s)  {
-		full_name = n;
-		name = n;
-		size_type = s;
-	}
-
-	int32_t            size_type;
-
-	std::string        name;
-	std::string        namespace_name;
-	std::string        sub_name;  // pointer, link
-	std::string        full_name;
-
-	std::flag32_t      property_type;
-
-	type_t* base_type = nullptr;
-	class_t* base_class = nullptr;
-
-	bool is_namespace() { return std::check_flag(property_type, property_type_flag::type_namespace); }
-	bool is_class() { return std::check_flag(property_type, property_type_flag::type_class); }
-	bool is_base_type() { return std::check_flag(property_type, property_type_flag::type_base_type); }
-	bool is_new_type() { return std::check_flag(property_type, property_type_flag::type_new_type); }
-	bool is_void() { return std::check_flag(property_type, property_type_flag::type_void); }
-	bool is_const() { return std::check_flag(property_type, property_type_flag::type_const); }
-	bool is_pointer() { return std::check_flag(property_type, property_type_flag::type_pointer); }
-	bool is_link() { return std::check_flag(property_type, property_type_flag::type_link); }
-	bool is_callback() { return std::check_flag(property_type, property_type_flag::type_callback); }
-	bool is_volatile() { return std::check_flag(property_type, property_type_flag::type_volatile); }
-
-	bool is_restrict() { return std::check_flag(property_type, property_type_flag::type_restrict); }
-
-	//  лассы хранени€
-	bool is_auto() { return std::check_flag(property_type, property_type_flag::type_auto); }
-	bool is_register() { return std::check_flag(property_type, property_type_flag::type_register); }
-	bool is_static() { return std::check_flag(property_type, property_type_flag::type_static); }
-	bool is_extern() { return std::check_flag(property_type, property_type_flag::type_extern); }
-
-	bool is_template() { return std::check_flag(property_type, property_type_flag::type_template); }
-
-	void set_namespace() { std::add_flag(property_type, property_type_flag::type_namespace); }
-	void set_class() { std::add_flag(property_type, property_type_flag::type_class); }
-	void set_base_type() { std::add_flag(property_type, property_type_flag::type_base_type); }
-	void set_new_type() { std::add_flag(property_type, property_type_flag::type_new_type); }
-	void set_void() { std::add_flag(property_type, property_type_flag::type_void); }
-	void set_const() { std::add_flag(property_type, property_type_flag::type_const); }
-	void set_pointer() { std::add_flag(property_type, property_type_flag::type_pointer); }
-	void set_link() { std::add_flag(property_type, property_type_flag::type_link); }
-	void set_callback() { std::add_flag(property_type, property_type_flag::type_callback); }
-	void set_volatile() { std::add_flag(property_type, property_type_flag::type_volatile); }
-
-	void set_restrict() { std::add_flag(property_type, property_type_flag::type_restrict); }
-
-	//  лассы хранени€
-	void set_auto() { std::add_flag(property_type, property_type_flag::type_auto); }
-	void set_register() { std::add_flag(property_type, property_type_flag::type_register); }
-	void set_static() { std::add_flag(property_type, property_type_flag::type_static); }
-	void set_extern() { std::add_flag(property_type, property_type_flag::type_extern); }
-
-	void set_template() { std::add_flag(property_type, property_type_flag::type_template); }
-};
-
-class var_t
-{
-public:
-	type_t             type;
-	std::string        name;
-};
-
-class argument_t : public var_t
-{
-public:
-
-};
-
-class template_type_t
-{
-public:
-	std::string        name;
-	std::flag32_t      property_type;
-};
-
-class method_t
-{
-public:
-	std::string name;
-	type_t      return_type;
-	std::vector<argument_t>      arguments;
-	std::vector<template_type_t> template_types;
-	bool is_template = false;
-	bool is_const = false;
-};
-
-class func_t
-{
-public:
-	std::string name;
-
-	type_t      return_type;
-	std::vector<argument_t>      arguments;
-	std::vector<template_type_t> template_types;
-	bool is_template = false;
-	bool is_const = false;
-};
-
-class operator_t
-{
-public:
-};
-
-
-
-class namespace_t
-{
-public:
-	std::string name;
-	std::string full_name = "::";
-
-	int         level = 1; // global
-
-	namespace_t*  parent       = nullptr;
-
-	tree_words_t* open_block   = nullptr;
-	tree_words_t* close_block  = nullptr;
-
-
-	bool is_global() { return level == 1; }
-};
-
-class class_t
-{
-public:
-	std::string name;
-
-	std::vector<class_t>    child_class;
-	std::vector<class_t*>   inheritance;
-	std::vector<method_t>   methods;
-	std::vector<operator_t> operators;
-	std::vector<var_t>      vars;
-
-	int level        = -1;
-
-	bool is_template = false;
-	bool is_const    = false;
-};
-
-class cpp_data_t
-{
-public:
-	std::vector<class_t> classes;
-	std::vector<type_t>  types;
-
-	void init()
-	{
-
-	}
-
-	void init_base_types()
-	{
-		types.push_back({ "int",                    sizeof(int) });
-		types.push_back({ "float",                  sizeof(float) });
-		types.push_back({ "double",                 sizeof(double) });
-		types.push_back({ "long",                   sizeof(long) });
-
-		types.push_back({ "bool",                   sizeof(bool) });
-		types.push_back({ "char",                   sizeof(char) });
-		types.push_back({ "wchar_t",                sizeof(wchar_t) });
-
-		types.push_back({ "unsigned char",          sizeof(unsigned char) });
-
-		types.push_back({ "signed char",            sizeof(signed char) });
-
-		types.push_back({ "char16_t",               sizeof(char16_t) });
-		types.push_back({ "char32_t",               sizeof(char32_t) });
-
-		types.push_back({ "short",                  sizeof(short) });
-		types.push_back({ "short int",              sizeof(short int) });
-		types.push_back({ "signed short int",       sizeof(signed short int) });
-		types.push_back({ "signed short",           sizeof(signed short) });
-		types.push_back({ "unsigned short",         sizeof(unsigned short) });
-		types.push_back({ "unsigned short int",     sizeof(unsigned short int) });
-
-
-		types.push_back({ "signed int",             sizeof(signed int) });
-		types.push_back({ "signed",                 sizeof(signed) });
-
-		types.push_back({ "unsigned int",           sizeof(unsigned int) });
-		types.push_back({ "unsigned",               sizeof(unsigned) });
-
-		types.push_back({ "long int",               sizeof(long int) });
-		types.push_back({ "signed long",            sizeof(signed long) });
-		types.push_back({ "signed long int",        sizeof(signed long int) });
-
-		types.push_back({ "unsigned long",          sizeof(unsigned long) });
-		types.push_back({ "unsigned long int",      sizeof(unsigned long int) });
-
-		types.push_back({ "long long",              sizeof(long long) });
-
-		types.push_back({ "long long int",          sizeof(long long int) });
-		types.push_back({ "signed long long int",   sizeof(signed long long int) });
-		types.push_back({ "signed long long",       sizeof(signed long long) });
-
-		types.push_back({ "unsigned long long",     sizeof(unsigned long long) });
-		types.push_back({ "unsigned long long int", sizeof(unsigned long long int) });
-
-		types.push_back({ "long double",            sizeof(long double) });
-
-		types.push_back({ "void",                   sizeof(void*) });
-
-		types.push_back({ "nullptr_t",              sizeof(std::nullptr_t) });
-
-	}
-};
-
-
-class template_t
-{
-    public:
-		std::string name;
-	
-		int         level = 1;
-
-		template_t*   parent      = nullptr;
-
-		tree_words_t* open_block  = nullptr;
-		tree_words_t* close_block = nullptr;
-
-		bool is_global() { return level == 1; }
-};
-
-class cpp_element_t
-{
- public:
-	/*
-	   Ћюбой элемент изначально глобален
-	   ≈го требуетс€ принудительно перемещать на другой уровень
-	*/
-    namespace_t*  namespace_value = nullptr;
-	template_t*   template_value  = nullptr;
-	class_t*      class_value     = nullptr;
-
-
-	words_base_t* element     = nullptr; // Ќельз€ уничтожать
-
-	int           level       = -1;
-
-	tree_words_t* open_block;
-	tree_words_t* close_block;
-
-	void free()
-	{
-		if (class_value) {
-			delete class_value;
-			class_value = nullptr;
-		}
-
-		if (namespace_value) {
-			delete namespace_value;
-			namespace_value = nullptr;
-		}
-
-		if (template_value) {
-			delete template_value;
-			template_value = nullptr;
-		}
-	}
-
-	// TODO: flags
-	bool is_class()     { return class_value     != nullptr; }
-	bool is_namespace() { return namespace_value != nullptr; }
-	bool is_template()  { return template_value  != nullptr; }
-};
-
-typedef tree_t<cpp_element_t*> tree_element_t;
-
-class cpp_elements_t
-{
-public:
-	tree_element_t data;
-	std::vector<cpp_element_t*> no_sort_list;
-
-	void process_sort(cpp_element_t* element)
-	{
-		// Just global object
-		if (element->level == 1)
-		{
-			data.push(element);
-			return;
-		}
-
-		result_tree = nullptr;
-
-		tree_element_t* result = find_block(element);
-
-		if (!result)
-		{
-			printf("WTF?!\n");
-			return;
-		}
-
-		result->push(new tree_element_t(element));
-	}
-
-	void print()
-	{
-		printf("Result parse:\n");
-
-		data.func = std::bind(&cpp_elements_t::process_print, this, std::placeholders::_1);
-		data.process();
-	}
-
-	void print_space(int count)
-	{
-		if (count == 1)
-		{
-			printf("+");
-
-		}
-		else
-			printf("|");
-
-		for (size_t i = 1; i < count; i++)
-		{
-			printf("-");
-		}
-	}
-
-	void print_element(tree_words_t* tree)
-	{
-		if (tree->get_value()->is_new_line()
-			||
-			tree->get_value()->is_space_tab() ||
-			tree->get_value()->is_symbol()
-			)
-			return;
-
-		print_space(tree->level + 1);
-		printf("%s\n", tree->get_value()->data.c_str());
-	}
-
-	void process_print(tree_element_t *element)
-	{
-		print_space(element->level);
-		
-		if (element->get_value()->is_class())
-		{
-			printf("type: class name: %s\n", element->get_value()->class_value->name.c_str());
-		}
-
-		if (element->get_value()->is_namespace())
-		{
-			printf("type: namespace name: %s\n", element->get_value()->namespace_value->name.c_str());
-		}
-
-		if (element->get_value()->is_template())
-		{
-			printf("type: template:\n");
-
-			element->get_value()->open_block->func = std::bind(&cpp_elements_t::print_element, this, std::placeholders::_1);
-			element->get_value()->open_block->process();
-		}
-	}
-
-	void process_sort()
-	{
-		// so sad, € не хотел делать перебор по ширине
-		for (size_t i = 0; i < max_level; i++)
-		{
-			for (size_t k = 0; k < no_sort_list.size(); k++)
-			{	
-				if (no_sort_list[k]->level == (i + 1))
-				  process_sort(no_sort_list[k]);
-			}
-		}	
-	}
-
-	int max_level = 1;
-
-	void add_element(cpp_element_t* element)
-	{
-		if (element->level < 1)
-		{
-			// lol
-			printf("Error level element!\n");
-			return;
-		}
-
-		if (element->level > max_level)
-			max_level = element->level;
-
-		no_sort_list.push_back(element);
-	}
-
-
-	tree_element_t* find_block(cpp_element_t* element) {
-		element_for_find = element;
-		data.func = std::bind(&cpp_elements_t::process, this, std::placeholders::_1);
-		data.process();
-		return result_tree;
-	}
-
-	tree_element_t* result_tree      = nullptr;
-	cpp_element_t*  element_for_find = nullptr;
-
-	void process(tree_element_t* tree_element)
-	{
-		if (!element_for_find) {
-			tree_element->stop_process();
-			return;
-		}
-
-		if (!element_for_find->open_block) {
-			tree_element->stop_process();
-			return;
-		}
-
-		if (!element_for_find->open_block->parent) {
-			tree_element->stop_process();
-			return;
-		}
-
-		if (tree_element->get_value()->open_block->index == element_for_find->open_block->parent->index)
-		{
-			result_tree = tree_element;
-			tree_element->stop_process();
-			return;
-		}
-	}
-};
-
-class cpp_context_t
-{
- public:
-	 cpp_elements_t elements; // final cpp tree meh
-
-	 void add_element(cpp_element_t* element)
-	 {
-		 elements.add_element(element);
-	 }
-
-};
-
-enum cpp_flag_t : std::flag32_t
-{
-	unknow = 1 << 0,
-	value = 1 << 1,
-	cpp_class = 1 << 2,
-	cpp_struct = 1 << 3,
-	cpp_union = 1 << 4,
-	cpp_namespace = 1 << 5,
-	cpp_comment_line = 1 << 6,
-	cpp_comment_line_end = 1 << 7,
-	cpp_global_comments = 1 << 8,
-	cpp_global_comments_end = 1 << 9,
-	cpp_ignore_next_iteration = 1 << 10,
-	cpp_ignore_next_iteration2 = 1 << 11,
-	cpp_typedef = 1 << 12,
-	cpp_block_read = 1 << 13,
-	cpp_template = 1 << 14,
-	cpp_template_block_read = 1 << 15,
-};
-
-struct base_arg_t;
-
-namespace parser
-{
-	struct element_t
-	{
-		element_t() {
-
-		}
-		element_t(const std::string &new_name, const cpp_flag_t &f) { cpp_flag = f; }
-			std::string   name;
-			cpp_flag_t    cpp_flag;
-	};
-
-	struct event_t {
-
-		    event_t() {}
-
-			event_t(const std::string &new_name, cpp_flag_t flag, std::function<void(base_arg_t*)> f, bool symbol) {
-				element.name     = new_name;
-				element.cpp_flag = flag;
-				func             = f;
-				is_symbol        = symbol;
-			}
-
-		    element_t element;
-			bool is_symbol = false;
-			std::function<void(base_arg_t* &)> func = nullptr;
-	};
-
-	class event_process_t
-	{
-	    public:
-			std::vector<event_t> list_events;
-	};
-}
-
-class block_depth_base_t {
-public:
-	std::flag32_t cpp_flag;
-	std::flag32_t cpp_event;
-
-	std::string comment_line;
-	std::string comment_big;
-
-	cpp_element_t* cpp_element = nullptr;
-	cpp_element_t* parent_element = nullptr;
-
-	void clear()
-	{
-		std::clear_flag(cpp_flag);
-		std::clear_flag(cpp_event);
-	}
-};
-
-
-struct base_arg_t
-{
-	std::size_t    size;
-
-	block_depth_base_t* region;
-	block_depth_base_t* parent_region;
-
-	words_base_t* element;
-	tree_words_t* word;
-
-	parser::event_process_t* event_process;
-
-	bool is_global() {
-
-		bool result = false;
-
-		if (word)
-			if (word->parent)
-				result = word->parent->parent->is_root;
-
-		return result;
-	}
-};
 
 class parser_cpp_t
 {
@@ -960,14 +332,14 @@ public:
 
 			if (!is_element_find)
 			{
-				std::add_flag(arg->region->cpp_flag, cpp_flag_t::value);
+				std::add_flag(arg->region->cpp_flag, cpp_flag_t::cpp_value);
 			}
 
 			if (((arg->region->cpp_event != arg->region->cpp_flag) && ((std::flag32_t) arg->region->cpp_event > 0))) {
 
 				for (size_t i = 0; i < arg->event_process->list_events.size(); i++)
 				{
-					if (std::check_flag(arg->region->cpp_event, arg->event_process->list_events[i].element.cpp_flag)  && std::check_flag(arg->region->cpp_flag, cpp_flag_t::value))
+					if (std::check_flag(arg->region->cpp_event, arg->event_process->list_events[i].element.cpp_flag)  && std::check_flag(arg->region->cpp_flag, cpp_flag_t::cpp_value))
 					{
 						// здесь вызов callback
 						if (arg->event_process->list_events[i].func)
@@ -1051,12 +423,12 @@ public:
 					else
 					{
 						//std::clear_flag(cpp_flag);
-						std::add_flag(cpp_flag, cpp_flag_t::value);
+						std::add_flag(cpp_flag, cpp_flag_t::cpp_value);
 					}
 
 					if (((cpp_event != cpp_flag) && ((std::flag32_t) cpp_event > 0))) {
 
-						if (std::check_flag(cpp_event, cpp_flag_t::cpp_class) && std::check_flag(cpp_flag, cpp_flag_t::value))
+						if (std::check_flag(cpp_event, cpp_flag_t::cpp_class) && std::check_flag(cpp_flag, cpp_flag_t::cpp_value))
 						{
 							bool is_global = false;
 
@@ -1082,11 +454,11 @@ public:
 							last_element_region = cpp_element;
 							last_cpp_element    = cpp_element;
 
-							std::del_flag(cpp_flag, cpp_flag_t::value);
+							std::del_flag(cpp_flag, cpp_flag_t::cpp_value);
 							std::add_flag(cpp_flag, cpp_flag_t::cpp_block_read);
 						}
 
-						if (std::check_flag(cpp_event, cpp_flag_t::cpp_namespace) && std::check_flag(cpp_flag, cpp_flag_t::value))
+						if (std::check_flag(cpp_event, cpp_flag_t::cpp_namespace) && std::check_flag(cpp_flag, cpp_flag_t::cpp_value))
 						{
 							bool is_global = false;
 
@@ -1117,11 +489,11 @@ public:
 
 						    //printf("namespace: %s\n", element->data.c_str());
 
-							std::del_flag(cpp_flag, cpp_flag_t::value);
+							std::del_flag(cpp_flag, cpp_flag_t::cpp_value);
 							std::add_flag(cpp_flag, cpp_flag_t::cpp_block_read);
 						}
 
-						if (std::check_flag(cpp_event, cpp_flag_t::cpp_struct) && std::check_flag(cpp_flag, cpp_flag_t::value))
+						if (std::check_flag(cpp_event, cpp_flag_t::cpp_struct) && std::check_flag(cpp_flag, cpp_flag_t::cpp_value))
 						{
 							if (std::check_flag(cpp_event, cpp_flag_t::cpp_typedef))
 							{
@@ -1134,14 +506,14 @@ public:
 
 							std::clear_flag(cpp_flag);
 						}
-						if (std::check_flag(cpp_event, cpp_flag_t::cpp_union)  && std::check_flag(cpp_flag, cpp_flag_t::value))
+						if (std::check_flag(cpp_event, cpp_flag_t::cpp_union)  && std::check_flag(cpp_flag, cpp_flag_t::cpp_value))
 						{
 							std::clear_flag(cpp_flag);
 							printf("union: %s\n", element->data.c_str());
 						}
 
 
-						if (std::check_flag(cpp_event, cpp_flag_t::cpp_template) && std::check_flag(cpp_flag, cpp_flag_t::value))
+						if (std::check_flag(cpp_event, cpp_flag_t::cpp_template) && std::check_flag(cpp_flag, cpp_flag_t::cpp_value))
 						{
 							std::clear_flag(cpp_flag);
 							printf("template: %s\n", element->data.c_str());
@@ -1156,9 +528,9 @@ public:
 					if ((std::flag32_t) cpp_flag > 0)
 					{
 						if (
-							(std::only_flag(cpp_flag, cpp_flag_t::value)) ||
+							(std::only_flag(cpp_flag, cpp_flag_t::cpp_value)) ||
 							(std::only_flag(cpp_flag, cpp_flag_t::cpp_typedef)) ||
-							(std::only_flag(cpp_flag, cpp_flag_t::cpp_typedef + cpp_flag_t::value))
+							(std::only_flag(cpp_flag, cpp_flag_t::cpp_typedef + cpp_flag_t::cpp_value))
 
 							)
 						{
@@ -1327,7 +699,7 @@ public:
 			arg->region->cpp_element = cpp_element;
 			last_cpp_element = cpp_element;
 
-			std::del_flag(arg->region->cpp_flag, cpp_flag_t::value);
+			std::del_flag(arg->region->cpp_flag, cpp_flag_t::cpp_value);
 			std::add_flag(arg->region->cpp_flag, cpp_flag_t::cpp_block_read);
 		}
 	}
@@ -1349,7 +721,7 @@ public:
 				
 				cpp_element->template_value = new template_t;
 
-				cpp_element->template_value->name  = "just template";
+				cpp_element->template_value->name  = "template"; // вообще должно быть пусто
 				cpp_element->template_value->level = arg->word->level;
 
 				cpp_element->element = arg->element;
@@ -1433,7 +805,6 @@ public:
 		base_arg.word                  = word;
 
 		base_arg.event_process         = &event_process;
-
 
 		parse_element_base_event(&base_arg);
 	}

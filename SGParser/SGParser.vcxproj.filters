@@ -16,6 +16,12 @@
     <Filter Include="detail">
       <UniqueIdentifier>{e1acd47e-0700-4b07-98cb-53687d35cb79}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Исходные файлы\parser">
+      <UniqueIdentifier>{44ef16ae-9c40-48ae-a121-160c50671344}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\cpp">
+      <UniqueIdentifier>{cbe8700b-dbc4-42d1-afd2-72b87103d075}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SGParser.cpp">
@@ -38,6 +44,24 @@
     <ClInclude Include="string_function.hpp">
       <Filter>detail</Filter>
     </ClInclude>
+    <ClInclude Include="words.hpp">
+      <Filter>Исходные файлы\parser</Filter>
+    </ClInclude>
+    <ClInclude Include="flags_enums.hpp">
+      <Filter>Исходные файлы\parser</Filter>
+    </ClInclude>
+    <ClInclude Include="cpp_objects.hpp">
+      <Filter>Исходные файлы\cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="cpp_elements.hpp">
+      <Filter>Исходные файлы\cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="cpp_element.hpp">
+      <Filter>Исходные файлы\cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="event_process.hpp">
+      <Filter>Исходные файлы\parser</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\test.cpp">
@@ -47,5 +71,8 @@
       <Filter>Исходные файлы</Filter>
     </None>
     <None Include="..\sg.hpp" />
+    <None Include="templatehard_test.cpp">
+      <Filter>Исходные файлы</Filter>
+    </None>
   </ItemGroup>
 </Project>

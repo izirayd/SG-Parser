@@ -156,17 +156,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="templatehard_test.cpp" />
     <None Include="..\sg.hpp" />
     <None Include="..\test.cpp" />
     <ClCompile Include="SGParser.cpp" />
     <None Include="typedef_test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cpp_element.hpp" />
+    <ClInclude Include="cpp_elements.hpp" />
+    <ClInclude Include="cpp_objects.hpp" />
+    <ClInclude Include="event_process.hpp" />
     <ClInclude Include="file.hpp" />
     <ClInclude Include="flag.hpp" />
+    <ClInclude Include="flags_enums.hpp" />
     <ClInclude Include="path.hpp" />
     <ClInclude Include="string_function.hpp" />
     <ClInclude Include="tree.hpp" />
+    <ClInclude Include="words.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

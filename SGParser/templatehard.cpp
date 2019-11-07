@@ -35,6 +35,48 @@ class apple_t
 {
 };
 
+/*
+  компилятор Visual stidio не может это спарсить лол
+*/
+//template <typename T>
+//class a_t
+//{
+//public:
+//	class null_1_t {
+//	public:
+//		class b_t
+//		{
+//		public:
+//			T data;
+//		};
+//	};
+//
+//	class c_t
+//	{
+//	public:
+//		null_1_t::b_t b;
+//	};
+//};
+
+
+template <typename T>
+class a_t
+{
+public:
+
+	class b_t
+	{
+		public:
+			T data;
+	};
+
+	class c_t
+	{
+	public:
+		b_t b;
+	};
+};
+
 void main()
 {
 	fruit<apple_t> apple;
