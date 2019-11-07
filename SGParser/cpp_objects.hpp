@@ -247,3 +247,15 @@ public:
 
 	bool is_global() { return level == 1; }
 };
+
+class comment_line_t
+{
+public:
+	std::string name;
+};
+
+class coomment_big_t
+{
+public:
+	std::string name;
+};

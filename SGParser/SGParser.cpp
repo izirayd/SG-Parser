@@ -15,7 +15,6 @@ void print_space(int count)
 	if (count == 0)
 	{
 		printf("+");
-
 	}
 	else
 		printf("|");
@@ -78,6 +77,7 @@ int main()
 
 	int32_t new_position = -1;
 	std::vector<std::pair<std::string, std::string>> array_symbols;
+
 	array_symbols.push_back({"{", "}"});
 	array_symbols.push_back({"(", ")"});
 	array_symbols.push_back({"[", "]"});

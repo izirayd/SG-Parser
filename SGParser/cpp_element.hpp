@@ -9,9 +9,11 @@ public:
 	   Любой элемент изначально глобален
 	   Его требуется принудительно перемещать на другой уровень
 	*/
-	namespace_t*  namespace_value = nullptr;
-	template_t*   template_value  = nullptr;
-	class_t*      class_value     = nullptr;
+	namespace_t*    namespace_value        = nullptr;
+	template_t*     template_value         = nullptr;
+	class_t*        class_value            = nullptr;
+	comment_line_t* comment_line_value     = nullptr;
+	coomment_big_t* comment_big_value      = nullptr;
 
 	words_base_t* element = nullptr; // Нельзя уничтожать
 

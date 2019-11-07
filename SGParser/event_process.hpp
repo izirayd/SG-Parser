@@ -49,9 +49,6 @@ public:
 	std::flag32_t cpp_flag;
 	std::flag32_t cpp_event;
 
-	std::string comment_line;
-	std::string comment_big;
-
 	cpp_element_t* cpp_element    = nullptr;
 	cpp_element_t* parent_element = nullptr;
 

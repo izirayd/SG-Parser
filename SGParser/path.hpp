@@ -1,16 +1,11 @@
 #pragma once
 
-#ifdef _WIN32
-#include <socket.hpp>
-#include <windows.h>
-#else
-#include "socket.hpp"
-#endif
+#include "platform.hpp"
 
 #include <cstdarg>
 
 #if defined(PLATFORM_WINDOWS)
-
+#include <windows.h>
 #include <shlwapi.h>
 #include <psapi.h>
 
