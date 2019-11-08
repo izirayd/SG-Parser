@@ -259,8 +259,11 @@ public:
 
 	void parse_tree()
 	{
-		tree.func = std::bind(&parser_cpp_t::parse_element, this, std::placeholders::_1);
-		tree.process();
+		//tree.func = std::bind(&parser_cpp_t::parse_element, this, std::placeholders::_1);
+		//tree.process();
+
+		tree.process_function["base"] = detail::bind_function(&parser_cpp_t::parse_element, this, std::placeholders::_1);
+		tree.start_process();
 	}
 
 
@@ -709,6 +712,24 @@ public:
 	{
 	}
 
+
+	void process_template_parser(tree_words_t* element, int argument)
+	{
+		if (!element)
+			return;
+	}
+
+	void template_parser(base_arg_t* arg)
+	{
+		if (arg) {
+			//arg->region->cpp_element->open_block->func = std::bind(&parser_cpp_t::process_template_parser, this, std::placeholders::_1);
+			//arg->region->cpp_element->open_block->process();
+
+			arg->region->cpp_element->open_block->process_function["base"] = detail::bind_function(&parser_cpp_t::process_template_parser, this, std::placeholders::_1, std::placeholders::_2);
+			arg->region->cpp_element->open_block->start_process(100);
+		}
+	}
+
 	void parse_template_block(base_arg_t* arg)
 	{
 		if (std::check_flag(arg->region->cpp_flag, cpp_flag_t::cpp_template))
@@ -728,7 +749,7 @@ public:
 				cpp_element->level   = arg->word->level;
 
 				arg->region->cpp_element = cpp_element;
-
+				 
 				last_cpp_element = cpp_element;
 				
 				if (arg->region->cpp_element)
@@ -750,6 +771,8 @@ public:
 
 				cpp_context.add_element(arg->region->cpp_element);
 				std::clear_flag(arg->region->cpp_flag);	
+
+				template_parser(arg);
 			}
 		}		
 	}
@@ -796,7 +819,7 @@ public:
 
 		//parse_element_base(region->cpp_flag, region->cpp_event, word->get_value(), word->size(), word, region->cpp_element, parent_region->parent_element);
 
-		base_arg.region = region;
+		base_arg.region        = region;
 		base_arg.parent_region = parent_region;
 
 		base_arg.element               = word->get_value();

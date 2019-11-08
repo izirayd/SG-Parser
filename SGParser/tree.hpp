@@ -4,6 +4,10 @@
 #include <string>
 #include <functional>
 
+#include "function_wrapper.hpp"
+
+namespace std { template<class T> inline void clear(std::vector<T>& vec) { std::vector<T>().swap(vec); } }
+
 template <typename data_value_t>
 class tree_t
 {
@@ -114,6 +118,8 @@ public:
 
 	std::function<void(tree_t<data_value_t>*)> func;
 
+	detail::function_wrapper_t process_function;
+
 	std::size_t size() { return tree.size(); }
 
 	void stop_process()
@@ -121,17 +127,19 @@ public:
 		root->is_process = false;
 	}
 
-	void process()
+	template <typename... arguments>
+	void start_process(arguments&& ... args)
 	{
 		root->is_process = true;
 
 		int lvl = 0;
-		process(this, lvl);
+		process(this, lvl, (args)...);
 
 		root->is_process = false;
 	}
 
-	void process(tree_t* tree, int lvl)
+	template <typename... arguments>
+	void process(tree_t* tree, int lvl, arguments&& ... args)
 	{
 		if (!root->is_process)
 			return;
@@ -142,14 +150,14 @@ public:
 		tree->level = lvl;
 
 		if (tree->is_value)
-			func(tree);
-
+			process_function.call("base", *tree, (args)...);
+		
 		for (size_t i = 0; i < tree->tree.size(); i++)
 		{
 			if (tree->tree[i])
 			{
 				lvl++;
-				process(tree->tree[i], lvl);
+				process(tree->tree[i], lvl, (args)...);
 				lvl--;
 			}
 		}
@@ -174,6 +182,8 @@ public:
 
 		std::clear(tree);
 	}
+
+	void* user_data;
 
 	data_value_t  get_value() const  { return value; }
 	data_value_t& get_value() { return value; }

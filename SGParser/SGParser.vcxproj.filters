@@ -74,5 +74,8 @@
     <None Include="templatehard_test.cpp">
       <Filter>Исходные файлы</Filter>
     </None>
+    <None Include="function_wrapper.hpp">
+      <Filter>detail</Filter>
+    </None>
   </ItemGroup>
 </Project>

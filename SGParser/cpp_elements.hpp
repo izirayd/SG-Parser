@@ -34,8 +34,11 @@ public:
 	{
 		printf("Result parse:\n");
 
-		data.func = std::bind(&cpp_elements_t::process_print, this, std::placeholders::_1);
-		data.process();
+		//data.func = std::bind(&cpp_elements_t::process_print, this, std::placeholders::_1);
+		//data.process();
+
+		data.process_function["base"] = detail::bind_function(&cpp_elements_t::process_print, this, std::placeholders::_1);
+		data.start_process();
 	}
 
 	void print_space(int count)
@@ -85,8 +88,15 @@ public:
 		{
 			printf("type: template:\n");
 
-			element->get_value()->open_block->func = std::bind(&cpp_elements_t::print_element, this, std::placeholders::_1);
-			element->get_value()->open_block->process();
+			//element->get_value()->open_block->func = std::bind(&cpp_elements_t::print_element, this, std::placeholders::_1);
+			//element->get_value()->open_block->process();
+
+			//element->get_value()->open_block->func = std::bind(&cpp_elements_t::print_element, this, std::placeholders::_1);
+			//element->get_value()->open_block->process();
+
+
+			element->get_value()->open_block->process_function["base"] = detail::bind_function(&cpp_elements_t::print_element, this, std::placeholders::_1);
+			element->get_value()->open_block->start_process();
 		}
 	}
 
@@ -123,13 +133,17 @@ public:
 
 	tree_element_t* find_block(cpp_element_t* element) {
 		element_for_find = element;
-		data.func = std::bind(&cpp_elements_t::process, this, std::placeholders::_1);
-		data.process();
+		//data.func = std::bind(&cpp_elements_t::process, this, std::placeholders::_1);
+		//data.process();
+
+		data.process_function["base"] = detail::bind_function(&cpp_elements_t::process, this, std::placeholders::_1);
+		data.start_process();
+
 		return result_tree;
 	}
 
-	tree_element_t* result_tree = nullptr;
-	cpp_element_t* element_for_find = nullptr;
+	tree_element_t* result_tree      = nullptr;
+	cpp_element_t*  element_for_find = nullptr;
 
 	void process(tree_element_t* tree_element)
 	{

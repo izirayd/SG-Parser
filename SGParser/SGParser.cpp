@@ -97,8 +97,8 @@ int main()
 
 	printf("Process parse end: %2.fms\n", result.count());
 
-	parser_cpp.tree.func = test;
-	parser_cpp.tree.process();
+	parser_cpp.tree.process_function["base"] = test;
+	parser_cpp.tree.start_process();
 
 	parser_cpp.cpp_context.elements.print();
 

@@ -26,7 +26,8 @@ struct words_base_t
 	std::flag16_t type;
 	std::string   data;
 
-	inline void clear() { std::clear_flag(type); data.clear(); }
+	inline void clear() { 
+		std::clear_flag(type); data.clear(); }
 
 	inline bool is_space_tab()    { return std::check_flag(type, parse_flag_t::space_tab);    }
 	inline bool is_word()         { return std::check_flag(type, parse_flag_t::word);         }

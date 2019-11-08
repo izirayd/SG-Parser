@@ -156,6 +156,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="function_wrapper.hpp" />
     <None Include="templatehard_test.cpp" />
     <None Include="..\sg.hpp" />
     <None Include="..\test.cpp" />

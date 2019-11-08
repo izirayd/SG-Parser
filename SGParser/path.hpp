@@ -37,8 +37,7 @@ class path_t
 
 public:
 	path_t()
-	{
-		
+	{	
 		PathExe[0] = 0x00;
 		PathDir[0] = 0x00;
 	}
