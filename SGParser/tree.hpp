@@ -138,6 +138,10 @@ public:
 		root->is_process = false;
 	}
 
+	void process_root_enable() {
+		root->is_process = true;
+	}
+
 	template <typename... arguments>
 	void process(tree_t* tree, int lvl, arguments&& ... args)
 	{
@@ -161,6 +165,11 @@ public:
 				lvl--;
 			}
 		}
+	}
+	
+	bool is_have_sub_elemets()
+	{
+		return !tree.empty();
 	}
 
 	int level = 0;

@@ -10,6 +10,9 @@
 
 using namespace std::chrono_literals;
 
+template<template<typename> class C>
+void a(){}
+
 void print_space(int count)
 {
 	if (count == 0)

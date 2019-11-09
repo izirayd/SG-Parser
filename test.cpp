@@ -1,8 +1,1 @@
-namespace std {
-	class a
-	{
-		class b {
-
-		};
-	};
-}
+template <class element_t, class traits_t = char_traits<element_t<int>>, class allocator_t = allocator<element_t>>

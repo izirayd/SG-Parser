@@ -674,8 +674,8 @@ public:
 
 	void parse_namespace_keywrod(base_arg_t* arg) {
 				
-		if (!std::check_flag(arg->region->cpp_flag, cpp_flag_t::cpp_block_read)) {
-
+		if (!std::check_flag(arg->region->cpp_flag, cpp_flag_t::cpp_block_read) && !std::check_flag(arg->parent_region->cpp_flag, cpp_flag_t::cpp_template))
+		{
 			cpp_element_t* cpp_element = new cpp_element_t;
 
 			if (std::check_flag(arg->region->cpp_flag, cpp_flag_t::cpp_namespace)) {
@@ -713,20 +713,58 @@ public:
 	}
 
 
-	void process_template_parser(tree_words_t* element, int argument)
+	void print_space(int count, bool is_elements)
+	{
+		if (is_elements && count == 0)
+		{
+			printf("+");
+			return;
+		}
+
+		int tmp_count = count;
+
+		for (size_t i = 0; i < tmp_count; i++)
+		{
+			printf("|");
+		}
+
+		if (is_elements)
+		{
+			printf("+");
+		}
+		else
+		{
+			printf("-");
+		}
+	}
+
+	void process_template_parser(tree_words_t* element, base_arg_t* arg, bool &ignore_first)
 	{
 		if (!element)
 			return;
+
+		if (element->get_value()->is_space_tab() || element->get_value()->is_new_line())
+			return;
+
+		if (ignore_first)
+		{
+			ignore_first = false;
+			return;
+		}
+
+		print_space(element->level, element->is_have_sub_elemets());
+
+		printf(" %s\n", element->get_value()->data.c_str());
 	}
 
 	void template_parser(base_arg_t* arg)
 	{
 		if (arg) {
-			//arg->region->cpp_element->open_block->func = std::bind(&parser_cpp_t::process_template_parser, this, std::placeholders::_1);
-			//arg->region->cpp_element->open_block->process();
-
-			arg->region->cpp_element->open_block->process_function["base"] = detail::bind_function(&parser_cpp_t::process_template_parser, this, std::placeholders::_1, std::placeholders::_2);
-			arg->region->cpp_element->open_block->start_process(100);
+			printf("+ Template elements\n");
+			bool ignore_first = true;
+			arg->region->cpp_element->open_block->process_function["base"] = detail::bind_function(&parser_cpp_t::process_template_parser, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+			arg->region->cpp_element->open_block->start_process(arg, ignore_first);
+			arg->region->cpp_element->open_block->process_root_enable();
 		}
 	}
 
@@ -734,8 +772,7 @@ public:
 	{
 		if (std::check_flag(arg->region->cpp_flag, cpp_flag_t::cpp_template))
 		{
-			printf("Template: %s\n", arg->element->data.c_str());
-
+			//printf("Template: %s\n", arg->element->data.c_str());
 			if (arg->element->data == "<")
 			{
 				cpp_element_t* cpp_element  = new cpp_element_t;
@@ -810,6 +847,8 @@ public:
 	{
 		if (!word)
 			return;
+
+		//printf("parse element: %s\n", word->get_value()->data.c_str());
 
 		block_depth_base_t* region        = block_depth.get_block(word->level);
 		block_depth_base_t* parent_region = block_depth.get_block(word->level - 1);  // Выровнит до 1
