@@ -8,6 +8,31 @@
 
 namespace std { template<class T> inline void clear(std::vector<T>& vec) { std::vector<T>().swap(vec); } }
 
+void print_space(int count, bool is_elements)
+{
+	if (is_elements && count == 0)
+	{
+		printf("+");
+		return;
+	}
+
+	int tmp_count = count;
+
+	for (size_t i = 0; i < tmp_count; i++)
+	{
+		printf("|");
+	}
+
+	if (is_elements)
+	{
+		printf("+");
+	}
+	else
+	{
+		printf("-");
+	}
+}
+
 template <typename data_value_t>
 class tree_t
 {

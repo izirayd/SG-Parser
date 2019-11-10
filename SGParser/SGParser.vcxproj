@@ -164,6 +164,8 @@
     <None Include="typedef_test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="base_parser.hpp" />
+    <ClInclude Include="block_parser.hpp" />
     <ClInclude Include="cpp_element.hpp" />
     <ClInclude Include="cpp_elements.hpp" />
     <ClInclude Include="cpp_objects.hpp" />
@@ -173,8 +175,10 @@
     <ClInclude Include="flags_enums.hpp" />
     <ClInclude Include="path.hpp" />
     <ClInclude Include="string_function.hpp" />
+    <ClInclude Include="template_parser.hpp" />
     <ClInclude Include="tree.hpp" />
     <ClInclude Include="words.hpp" />
+    <ClInclude Include="words_parser.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

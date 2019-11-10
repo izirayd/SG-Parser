@@ -20,6 +20,8 @@ template <template <class TT = char> class T> void A<T>::g() {
 	T<> t; // OK - T<char>
 }
 
+namespace std { template <class element_t, class traits_t = char_traits<element_t<int>>, class allocator_t = allocator<element_t>> class abc {}; }
+
 template <class T>
 class char_traits
 {

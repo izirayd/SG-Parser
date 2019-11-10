@@ -62,6 +62,18 @@
     <ClInclude Include="event_process.hpp">
       <Filter>Исходные файлы\parser</Filter>
     </ClInclude>
+    <ClInclude Include="template_parser.hpp">
+      <Filter>Исходные файлы\parser</Filter>
+    </ClInclude>
+    <ClInclude Include="base_parser.hpp">
+      <Filter>Исходные файлы\parser</Filter>
+    </ClInclude>
+    <ClInclude Include="block_parser.hpp">
+      <Filter>Исходные файлы\parser</Filter>
+    </ClInclude>
+    <ClInclude Include="words_parser.hpp">
+      <Filter>Исходные файлы\parser</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\test.cpp">
