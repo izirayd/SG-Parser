@@ -117,7 +117,7 @@ public:
 		if (NameFile[0] == 0x00)  return Result = false;
 
 
-		char CName[256];
+		char CName[256] = { 0 };
 		cast_char(CName, NameFile, wcslen(NameFile));
 
 		cfilename = CName;

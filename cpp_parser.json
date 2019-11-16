@@ -1,0 +1,92 @@
+{
+  "type_file": "SGP",
+  "version": "1.0",
+  "name": "C++ std17 parser",
+  "descriptor": "Its file for SGP engine for parsing C++",
+  "recursive blocks": {
+    "0": {
+      "name" : "curly brackets",
+      "open" : "{",
+      "close": "}"
+    },
+    "1": {
+      "name" : "angle brackets",
+      "open" : "<",
+      "close": ">"
+    },
+    "2": {
+      "name" : "round brackets",
+      "open" : "(",
+      "close": ")"
+    },
+    "3": {
+      "name" :  "square brackets",
+      "open" :  "[",
+      "close":  "]"
+    }
+  },
+  "keywords": {
+    "0": {
+      "name": "cpp namespace",
+      "keyword": "namespace",
+      "type": "element",
+      "block": "curly brackets",
+      "result": {
+        "0": "block",
+        "1": "header"
+      },
+      "property parser": {
+        "0": "value"
+      }
+    }
+  },
+  "vars": {
+    "0": {
+      "name": "namespace_start_type",
+      "parse list": {
+        "0": { "type": "any" },
+        "1": {
+          "type": "value_symbol",
+          "value": ":"
+        },
+        "2": {
+          "type": "value_symbol",
+          "value": ":"
+        }
+      }
+    },
+    "1": {
+      "name": "namespace_start_type",
+      "parse list": {
+        "0": {
+          "type": "value_symbol",
+          "value": ":"
+        },
+        "1": {
+          "type": "value_symbol",
+          "value": ":"
+        }
+      }
+    },
+    "2": {
+      "name": "namespace_start_type",
+      "parse list": {
+        "0": {
+          "type": "empty"
+        }
+      }
+    },
+    "3": {
+      "name": "type_block",
+      "parse list": {
+        "0": {
+          "type": "namespace_start_type",
+          "subtype": [ "repeat" ]
+        },
+        "1": {
+          "type": "value"
+        }
+      }
+    }
+  }
+}

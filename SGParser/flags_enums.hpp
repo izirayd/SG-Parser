@@ -51,3 +51,11 @@ enum cpp_flag_t : std::flag32_t
 	cpp_template = 1 << 14,
 	cpp_template_block_read = 1 << 15,
 };
+
+enum event_flag_t : std::flag32_t {
+
+	event_unknow        = 1 << 0,
+	event_read_value    = 1 << 1, // Чтение если есть value
+	event_read_compared = 1 << 2, // Чтение по сравнению
+	event_block         = 1 << 3, // Чтение по сравнению
+};

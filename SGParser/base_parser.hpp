@@ -78,6 +78,9 @@ namespace parser
 				if (!is_element_find)
 				{
 					std::add_flag(arg->region->cpp_flag, cpp_flag_t::cpp_value);
+
+					if (arg->event_process->any_value_read.func)
+						arg->event_process->any_value_read.func(arg);
 				}
 
 				if (((arg->region->cpp_event != arg->region->cpp_flag) && ((std::flag32_t) arg->region->cpp_event > 0))) {
@@ -98,10 +101,22 @@ namespace parser
 			{
 				for (size_t i = 0; i < arg->event_process->list_events.size(); i++)
 				{
-					if (arg->element->data == arg->event_process->list_events[i].element.name && std::check_flag(arg->region->cpp_event, arg->event_process->list_events[i].element.cpp_flag)) {
-
-						if (arg->event_process->list_events[i].func)
-							arg->event_process->list_events[i].func(arg);
+					if (arg->element->data == arg->event_process->list_events[i].element.name)
+					{
+						if (std::check_flag(arg->event_process->list_events[i].event_flag, event_flag_t::event_read_compared))
+						{
+							if (arg->event_process->list_events[i].func)
+								arg->event_process->list_events[i].func(arg);
+						}
+						else if (std::check_flag(arg->event_process->list_events[i].event_flag, event_flag_t::event_read_value))
+						{
+							if (std::check_flag(arg->region->cpp_event, arg->event_process->list_events[i].element.cpp_flag))
+							{
+					
+								if (arg->event_process->list_events[i].func)
+									arg->event_process->list_events[i].func(arg);
+							}
+						}
 					}
 				}
 			}
@@ -114,17 +129,17 @@ namespace parser
 
 			//printf("parse element: %s\n", word->get_value()->data.c_str());
 
-			block_depth_base_t* region = block_depth.get_block(word->level);
+			block_depth_base_t* region        = block_depth.get_block(word->level);
 			block_depth_base_t* parent_region = block_depth.get_block(word->level - 1);  // Выровнит до 1
 
 			if (!region)
 				return;
 
-			base_arg.region = region;
+			base_arg.region        = region;
 			base_arg.parent_region = parent_region;
 
 			base_arg.element = word->get_value();
-			base_arg.size = word->size();
+			base_arg.size    = word->size();
 
 			base_arg.word = word;
 

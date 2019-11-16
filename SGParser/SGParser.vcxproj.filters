@@ -22,6 +22,9 @@
     <Filter Include="Исходные файлы\cpp">
       <UniqueIdentifier>{cbe8700b-dbc4-42d1-afd2-72b87103d075}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Json">
+      <UniqueIdentifier>{e0629fec-95ec-47aa-98be-afa309ee6160}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SGParser.cpp">
@@ -74,6 +77,15 @@
     <ClInclude Include="words_parser.hpp">
       <Filter>Исходные файлы\parser</Filter>
     </ClInclude>
+    <ClInclude Include="benchmark.hpp">
+      <Filter>detail</Filter>
+    </ClInclude>
+    <ClInclude Include="executive_parser.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="json_base.hpp">
+      <Filter>Json</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\test.cpp">
@@ -88,6 +100,9 @@
     </None>
     <None Include="function_wrapper.hpp">
       <Filter>detail</Filter>
+    </None>
+    <None Include="..\cpp_parser.json">
+      <Filter>Json</Filter>
     </None>
   </ItemGroup>
 </Project>

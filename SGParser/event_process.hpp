@@ -16,23 +16,27 @@ namespace parser
 		element_t() {
 
 		}
-		element_t(const std::string& new_name, const cpp_flag_t& f) { cpp_flag = f; }
+		element_t(const std::string& new_name, const std::flag32_t& f) { cpp_flag = f; }
+
 		std::string   name;
-		cpp_flag_t    cpp_flag;
+		std::flag32_t cpp_flag;
 	};
 
 	struct event_t {
 
 		event_t() {}
 
-		event_t(const std::string& new_name, cpp_flag_t flag, std::function<void(base_arg_t*)> f, bool symbol) {
+		event_t(const std::string& new_name, std::flag32_t flag, std::function<void(base_arg_t*)> f, bool symbol, std::flag32_t ev) {
 			element.name = new_name;
 			element.cpp_flag = flag;
 			func = f;
 			is_symbol = symbol;
+			event_flag = ev;
 		}
 
-		element_t element;
+		element_t     element;
+		std::flag32_t event_flag;
+		
 		bool is_symbol = false;
 		std::function<void(base_arg_t*&)> func = nullptr;
 	};
@@ -41,6 +45,7 @@ namespace parser
 	{
 	public:
 		std::vector<event_t> list_events;
+		event_t any_value_read;
 	};
 }
 
