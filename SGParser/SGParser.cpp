@@ -30,10 +30,10 @@ void test(tree_words_t* tree)
 
 int main()
 {
-	printf("**************************************\n");
-	printf("*   SGParser DEV v0.1                *\n");
-	printf("**************************************\n");
-	printf("\n");
+	//printf("**************************************\n");
+	//printf("*   SGParser DEV v0.1                *\n");
+	//printf("**************************************\n");
+	//printf("\n");
 
 	/*printf("Version: 0.1\n");
 	printf("Base parser cpp: std17\n");*/
@@ -41,11 +41,11 @@ int main()
 	json_data_t json_data_cpp_parser;
 	json_data_cpp_parser.open_json(L"\\..\\cpp_parser.json");
 
-	printf("\nVersion: %s name: %s\n\n", json_data_cpp_parser.header.version.c_str(), json_data_cpp_parser.header.name.c_str());
+	//printf("\nVersion: %s name: %s\n\n", json_data_cpp_parser.header.version.c_str(), json_data_cpp_parser.header.name.c_str());
 
 	for (auto& it : json_data_cpp_parser.parser_data.keywords)
 	{
-		printf("Keyword: %s flag: %u\n", it.keyword.c_str(), it.unique_flag);
+	//	printf("Keyword: %s flag: %u\n", it.keyword.c_str(), it.unique_flag);
 	}
 
 	file_t cpp_file;
@@ -82,6 +82,8 @@ int main()
 		return 0;
 	}
 
+	parser::executive::test_namespace_declaration();
+
 	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
 	parser_cpp.process_parse();
@@ -106,22 +108,22 @@ int main()
 
 	std::system(title);
 
-	printf("\n");
-	printf("**************************************\n");
-	printf("*   DEBUG WORDS TREE                 *\n");
-	printf("**************************************\n");
-	printf("\n");
+	//printf("\n");
+	//printf("**************************************\n");
+	//printf("*   DEBUG WORDS TREE                 *\n");
+	//printf("**************************************\n");
+	//printf("\n");
 
-	printf("Words tree: \n+ %s\n", json_data_cpp_parser.header.name.c_str());
+	//printf("Words tree: \n+ %s\n", json_data_cpp_parser.header.name.c_str());
 
-	parser_cpp.tree.process_function["base"] = test;
-	parser_cpp.tree.start_process();
+	//parser_cpp.tree.process_function["base"] = test;
+	//parser_cpp.tree.start_process();
 
-	printf("\n");
-	printf("**************************************\n");
-	printf("*   ELEMENTS ANALYSIS RESULT         *\n");
-	printf("**************************************\n");
-	printf("\n");
+	//printf("\n");
+	//printf("**************************************\n");
+	//printf("*   ELEMENTS ANALYSIS RESULT         *\n");
+	//printf("**************************************\n");
+	//printf("\n");
 
 	//parser_cpp.cpp_context.elements.print();
 

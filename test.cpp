@@ -1,6 +1,1 @@
-namespace std {
-	class a
-	{
-
-	};
-}
+static const int a;
