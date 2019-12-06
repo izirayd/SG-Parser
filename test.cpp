@@ -1,1 +1,2 @@
-static const int a;
+b var;
+a var;

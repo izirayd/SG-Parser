@@ -82,7 +82,9 @@ int main()
 		return 0;
 	}
 
-	parser::executive::test_namespace_declaration();
+	//parser::executive::test_namespace_declaration();
+	parser::executive::types_test();
+	parser::executive::final_init();
 
 	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 

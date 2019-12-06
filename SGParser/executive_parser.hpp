@@ -31,7 +31,8 @@ namespace parser
 			// Данный тип и его сигнатуры будуи повторяться через указанный объект, слово или символ
 			parser_repeat_next = 1 << 8,
 			// Означает сигнатура нет, при этом цепочка сигнатур будет исполнена
-			parser_empty       = 1 << 9
+			parser_empty       = 1 << 9,
+			parser_result      = 1 << 10
 		};
 
 		class type_element_t;
@@ -41,11 +42,15 @@ namespace parser
 		  public:
 			  parser_flag_t   type;
 			  std::string     value;
+			  std::string     print_value;
 
-			  bool is_word() { return word; }
-			  bool is_any()  { return any; }
-			  bool any  = false;
-			  bool word = false;
+			  bool is_word()   { return word;  }
+			  bool is_any()    { return any;   }
+			  bool is_print()  { return print; }
+
+			  bool any   = false;
+			  bool word  = false;
+			  bool print = false;
 
 			  type_element_t* type_element;
 		};
@@ -97,9 +102,9 @@ namespace parser
 			{
 				command_t command;
 
-				command.type = parser_flag_t::parser_value;
+				command.type  =  parser_flag_t::parser_value;
 				command.value = "class";
-				command.any = false;
+				command.any   =  false;
 
 				commands.data.push_back(command);
 			}
@@ -162,8 +167,174 @@ namespace parser
 			return nullptr;
 		}
 
+		void add_type_a()
+		{
+			commands_t     commands;
+			type_element_t type_element;
+
+			type_element.is_ex = false;
+			type_element.name  = "a";
+
+			{
+				command_t command;
+
+				command.type  = parser_flag_t::parser_value;
+				command.value = "a";
+				command.any   = false;
+				command.word  = true;
+
+				command.print = true;
+				command.print_value = "Keyword A";
+
+				commands.data.push_back(command);
+			}
+
+			type_element.all_commands.push_back(commands);
+			global_types.elements.push_back(type_element);
+		}
+
+		void add_type_b()
+		{
+			commands_t     commands;
+			type_element_t type_element;
+
+			type_element.is_ex = false;
+			type_element.name = "b";
+
+			{
+				command_t command;
+
+				command.type  = parser_flag_t::parser_value;
+				command.value = "b";
+				command.any   = false;
+				command.word  = true;
+
+				command.print       = true;
+				command.print_value = "Keyword B";
+
+				commands.data.push_back(command);
+			}
+
+			type_element.all_commands.push_back(commands);
+			global_types.elements.push_back(type_element);
+		}
+
+		void add_type_c()
+		{
+			type_element_t type_element;
+
+			type_element.is_ex = false;
+			type_element.name  = "c";
+
+			{
+				commands_t     commands;
+
+				{
+					command_t command;
+
+					command.type  = parser_flag_t::parser_type;
+					command.value = "a";
+					command.any   = false;
+					command.word  = true;
+
+					commands.data.push_back(command);
+				}
+
+
+				type_element.all_commands.push_back(commands);
+			}
+			  // or
+			{
+				commands_t     commands;
+
+				{
+					command_t command;
+
+					command.type  = parser_flag_t::parser_type;
+					command.value = "b";
+					command.any   = false;
+					command.word  = true;
+
+					commands.data.push_back(command);
+				}
+
+
+				type_element.all_commands.push_back(commands);
+			}
+
+			global_types.elements.push_back(type_element);
+		}
+
+		void add_type_d()
+		{
+			commands_t     commands;
+			type_element_t type_element;
+
+			type_element.is_ex  = true;
+			type_element.name   = "d";
+
+			{
+				command_t command;
+
+				command.type  = parser_flag_t::parser_type;
+				command.value = "c";
+				command.any   = false;
+				command.word  = true;
+
+			    command.print = true;
+				command.print_value = "Its type";
+
+				commands.data.push_back(command);
+			}
+
+			{
+				command_t command;
+
+				command.type  = parser_flag_t::parser_value;
+				command.value = "any";
+				command.any   = true;
+				command.word  = true;
+
+				command.print = true;
+				command.print_value = "var";
+
+				commands.data.push_back(command);
+			}
+
+			{
+				command_t command;
+
+				command.type = parser_flag_t::parser_value;
+				command.value = ";";
+				command.any = false;
+				command.word = false;
+
+				commands.data.push_back(command);
+			}
+
+			type_element.all_commands.push_back(commands);
+			global_types.elements.push_back(type_element);
+		}
+
+		void types_test()
+		{
+			add_type_a();
+			add_type_b();
+			add_type_c();
+			add_type_d();
+		}
+
 		void final_init()
 		{
+
+			//for (size_t i = 0; i < global_types.elements.size(); i++)
+			//{
+			//	if (global_types.elements[i].is_ex)
+			//	{
+
+			//	}
+			//}
+
 			for (size_t i = 0; i < global_types.elements.size(); i++)
 			{
 				for (auto& commands : global_types.elements[i].all_commands)
@@ -415,11 +586,8 @@ namespace parser
 
 			type_element.all_commands.push_back(commands);
 
-			global_types.elements.push_back(type_element);
-
-			final_init();
+			global_types.elements.push_back(type_element);		
 		}
-
 
 		class current_commands_t
 		{
@@ -460,6 +628,63 @@ namespace parser
 			}
 		};
 
+		class lang_element_t
+		{
+		public:
+			struct name_elements_t
+			{
+				std::string     name;
+				type_element_t* type_element;
+			};
+
+			// Хранит информацию об типе данного элемента
+			std::vector<name_elements_t> types;
+
+			type_element_t* root_type_element;
+
+			name_elements_t name_element;
+
+			// Значение элемента
+			std::string value;
+		};
+
+		class word_command_element_t
+		{
+		  public:
+			  word_command_element_t() {}
+
+			  word_command_element_t(command_t* c, words_base_t* w) {
+				  command = c;
+				  element = w;
+
+				  is_command = true;
+			  }
+
+			  word_command_element_t(type_element_t* te, words_base_t* w) {
+				  type_element = te;
+				  element      = w;
+
+				  is_type_element = true;
+			  }
+
+			  bool is_command = false;
+			  bool is_type_element = false;
+
+			command_t*      command      = nullptr;
+			words_base_t*   element      = nullptr;
+			type_element_t* type_element = nullptr;
+		};
+		
+		using lang_graph_t    = tree_t<lang_element_t>;
+		using command_graph_t = tree_t<word_command_element_t>;
+
+		class context_lang_t
+		{
+		public:
+			lang_graph_t graph;
+		
+		};
+
 		struct base_arg_t;
 	
 		class block_depth_base_t {
@@ -467,14 +692,25 @@ namespace parser
 			std::flag32_t base_flag;
 			std::flag32_t event_flag;
 
-			type_elements_point_t* main_elements    = nullptr;;
-			type_elements_point_t* current_elements = nullptr;; // Текущие правила цепочки сигнатур
+			context_lang_t *global_context;
+			lang_graph_t   *current_graph;
+
+			command_graph_t command_graph;
+
+			type_elements_point_t* main_elements    = nullptr;
+			type_elements_point_t* current_elements = nullptr; // Текущие правила цепочки сигнатур
 
 			commands_t* current_commands     = nullptr;
 
 			current_types_t current_types;
 
 			int32_t signature_position = 0;
+			std::vector<words_base_t*> signature_buffer;
+
+			void clear_signature() {
+				signature_buffer.clear();
+				signature_position = 0;
+			}
 
 			void clear()
 			{	
@@ -542,18 +778,197 @@ namespace parser
 		};
 
 
-
 		class base_parser_t
 		{
 		public:
 			base_arg_t      base_arg;
 			block_depth_t   block_depth;
+			context_lang_t  lang;  // final result
 	
+			void result_command_graph_process(command_graph_t* command_graph, base_arg_t* arg, bool& ignore_first)
+			{
+				print_space(command_graph->level, command_graph->is_have_sub_elemets());
+
+
+				if (command_graph->get_value().is_command)
+				{
+					printf("%s", command_graph->get_value().command->value.c_str());
+
+					if (command_graph->get_value().command->is_print())
+					{
+						printf(" %s = %s", command_graph->get_value().command->print_value.c_str(), command_graph->get_value().element->data.c_str());
+					}
+				}
+
+				if (command_graph->get_value().is_type_element) {
+					printf("%s", command_graph->get_value().type_element->name.c_str());
+				}
+	
+				printf("\n");
+			}
+
+			void final_signature(base_arg_t* arg, current_type_t* type)
+			{
+				bool test = false;
+				arg->region->command_graph.process_function["base"] = detail::bind_function(&base_parser_t::result_command_graph_process, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+				arg->region->command_graph.start_process(*arg, test);
+				arg->region->command_graph.process_root_enable();
+			}
+
+			void new_command_list(current_type_t& current_type, command_t* current_command, commands_t* current_commands, base_arg_t* arg, int signature_position, bool is_current_type,
+				bool& is_result, bool& is_successfully_signature, command_graph_t* command_graph
+			)
+			{
+				is_result = false;
+
+				if (current_command->type == parser_flag_t::parser_value)
+				{
+					if (!current_command->is_any()) {
+						if (current_command->value == arg->element->data) {
+
+							command_graph->push({ current_command, arg->element });
+
+							if (current_command->is_print())
+							{
+								//printf("%s: %s ", current_command->print_value.c_str(), arg->element->data.c_str());
+							}
+
+							is_result = true;
+							is_successfully_signature = true;
+
+							if (is_current_type)
+								current_type.current_commands.commands.push_back(current_commands);
+						}
+					}
+					else {
+
+						command_graph->push({ current_command, arg->element });
+
+						if (current_command->is_print())
+						{
+							//printf("%s: %s ", current_command->print_value.c_str(), arg->element->data.c_str());
+						}
+
+						is_successfully_signature = true;
+						is_result = true;
+
+						if (is_current_type)
+							current_type.current_commands.commands.push_back(current_commands);
+					}
+
+					return;
+				}
+
+				if (current_command->type == parser_flag_t::parser_open_block || current_command->type == parser_flag_t::parser_close_block)
+				{
+					if (current_command->value == arg->element->data) {
+						is_result = true;
+						is_successfully_signature = true;
+					}
+
+					return;
+				}
+
+				if (current_command->type == parser_flag_t::parser_type)
+				{
+					if (!current_command->type_element)
+						return;
+
+					int w = 0;
+					for (auto& allcommands : current_command->type_element->all_commands)
+					{
+						commands_t* commands = &current_command->type_element->all_commands[w];
+
+						// commands это так же список
+						if (!allcommands.data.empty()) {
+
+							command_t* command = &commands->data[signature_position];
+							allcommands.is_status_parser = true;
+
+							command_graph_t* new_command_graph = new command_graph_t({ current_command, arg->element });
+
+							new_command_list(current_type, command, current_commands, arg, signature_position, is_current_type, is_result, is_successfully_signature, new_command_graph);
+
+							if (!is_result)
+							{
+								new_command_graph->delete_tree();
+								delete new_command_graph;
+							}
+
+							if (is_result)
+							{
+								command_graph->push(new_command_graph);
+
+								if (current_command->is_print())
+								{
+									//printf("%s: %s ", current_command->print_value.c_str(), arg->element->data.c_str());
+								}
+							}
+						}
+
+						w++;
+					}
+
+					return;
+				}
+			}
+
+			void process_commands(current_type_t& current_type, commands_t* current_commands, base_arg_t* arg, int signature_position, bool is_current_type)
+			{
+				if (current_commands->is_status_parser && current_commands->data.size() > arg->region->signature_position) {
+
+					arg->region->signature_buffer.push_back(arg->element);
+
+					bool is_successfully_signature = false;
+					bool is_result = false;
+
+					command_t* command = &current_commands->data[is_current_type ? 0 : arg->region->signature_position];
+
+					if (command)
+						new_command_list(current_type, command, current_commands, arg, signature_position, is_current_type, is_result, is_successfully_signature, &arg->region->command_graph);
+
+					if (!is_successfully_signature)
+					{
+						current_commands->is_status_parser = false;
+
+						if (current_type.type_element) {
+							arg->region->command_graph.delete_tree();
+							printf("Not signature %s, what is: \"%s\"?\n", current_type.type_element->name.c_str(), arg->element->data.c_str());
+						}
+						else
+							if (arg->element->is_word() || arg->element->is_symbol()) {
+
+								printf("[error 1]: No data about syntax: %s\n", arg->element->data.c_str());
+							}
+
+						arg->region->current_types.current_type.clear();
+						return;
+					}
+
+					if ((current_commands->data.size() - 1) == arg->region->signature_position && current_commands->is_status_parser)
+					{
+						//printf("It signature type %s!\n", current_type.type_element->name.c_str());
+
+						arg->region->command_graph.set_value({ current_type.type_element, arg->element });
+
+						final_signature(arg, &current_type);
+
+						current_commands->is_status_parser = false;
+						arg->region->current_types.current_type.clear();
+						arg->region->clear_signature();
+
+						arg->region->command_graph.delete_tree();
+						return;
+					}
+				}
+			}
+
 			bool find_signature(base_arg_t* arg)
 			{
 				if (!arg)
 					return false;
 
+				arg->region->clear_signature();
 				arg->region->current_types.clear();
 
 				type_elements_point_t* current_elements = nullptr;
@@ -573,30 +988,20 @@ namespace parser
 					
 					current_type_t current_type;
 
+					int w = 0;
 					for (auto& commands : types->all_commands)
 					{
+						commands_t *current_commands = &types->all_commands[w];
+
 						// commands это так же список
 						if (!commands.data.empty()) {
 							
-							command_t* current_command = &commands.data[0];
-
 							commands.is_status_parser = true;
-
-							if (current_command->type == parser_flag_t::parser_value)
-							{
-								if (!current_command->is_any()) {
-									if (current_command->value == arg->element->data)
-										current_type.current_commands.commands.push_back(&commands);
-								}
-								else				
-									current_type.current_commands.commands.push_back(&commands);			
-							}
-
-							if (current_command->type == parser_flag_t::parser_type)
-							{
-
-							}
+						
+							process_commands(current_type, current_commands, arg, 0, true);
 						}
+
+						w++;
 					}
 
 					if (!current_type.current_commands.commands.empty())
@@ -620,91 +1025,18 @@ namespace parser
 
 				if (arg->region->current_types.current_type.empty())
 				{
-					if (find_signature(arg))
-					{
-						arg->region->signature_position = 1;
-					}
-					else
-					{
-						if (arg->element->is_word() || arg->element->is_symbol())
-						  printf("No data about it syntax: %s\n", arg->element->data.c_str());
-					}
+					if (find_signature(arg))		
+						arg->region->signature_position = 1;					
 				}
 				else
 				{
 					if (arg->element->is_word() || arg->element->is_symbol()) {
 
 						for (auto &type: arg->region->current_types.current_type)
-						{
-							for (auto& commands : type.current_commands.commands)
-							{
+							for (auto& commands : type.current_commands.commands)	
 								if (commands)
-								{
-									if (commands->is_status_parser && commands->data.size() > arg->region->signature_position) {
-
-										bool is_successfully_signature = false;
-										command_t* command = &commands->data[arg->region->signature_position];
-
-										if (command)
-										{
-											if (command->type == parser_flag_t::parser_value)
-											{
-												if (command->is_any())
-												{
-													if (command->is_word()) {
-														printf("type: %s value: %s\n", type.type_element->name.c_str(), arg->element->data.c_str());
-														is_successfully_signature = true;
-													}
-													else
-													{
-														printf("type: %s value: %s\n", type.type_element->name.c_str(), arg->element->data.c_str());
-														is_successfully_signature = true;
-													}
-												}
-												else
-												{
-													if (command->value == arg->element->data)
-													{
-														printf("%s\n", arg->element->data.c_str());
-														is_successfully_signature = true;
-													}
-												}
-											}
-
-											if (command->type == parser_flag_t::parser_open_block || command->type == parser_flag_t::parser_close_block)
-											{
-												if (command->value == arg->element->data)
-												{
-													is_successfully_signature = true;
-												}
-											}
-
-							/*				if (command->type == parser_flag_t::parser_any_type)
-											{
-												is_successfully_signature = true;
-											}*/
-										}
-
-										if (!is_successfully_signature)
-										{
-											commands->is_status_parser = false;
-											printf("Not signature %s, what is: \"%s\"?\n", type.type_element->name.c_str(), arg->element->data.c_str());
-											arg->region->current_types.current_type.clear();
-											break;
-										}
-
-										if ((commands->data.size() - 1) == arg->region->signature_position && commands->is_status_parser)
-										{
-											commands->is_status_parser = false;
-											printf("It signature type %s!\n", type.type_element->name.c_str());
-											arg->region->current_types.current_type.clear();
-											break;
-										}
-									}
-								}
-							}
-						}
-
+									process_commands(type, commands, arg, arg->region->signature_position, false);
+								
 						arg->region->signature_position++;
 					}
 				}
@@ -726,7 +1058,17 @@ namespace parser
 				if (parent_region)
 				  parent_region->main_elements = &executive_types;
 
-				base_arg.region = region;
+				region->global_context = &lang;
+
+				if (!region->current_graph)
+				{
+					lang_graph_t* graph = parent_region->current_graph ? parent_region->current_graph : &region->global_context->graph;
+
+					if (graph)
+					    region->current_graph = graph->push(new lang_graph_t);
+				}
+
+				base_arg.region        = region;
 				base_arg.parent_region = parent_region;
 
 				base_arg.element = word->get_value();
@@ -735,7 +1077,6 @@ namespace parser
 				base_arg.word    = word;
 
 				parse_element_base_event(&base_arg);
-
 			}
 		};
 	}
